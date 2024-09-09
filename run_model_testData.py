@@ -2,9 +2,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from random_forest import RandomForestModel
-from neural_network import NeuralNetworkModel
-from svr import SupportVectorRegressorModel
-from gbm import GradientBoostingModel
+#from neural_network import NeuralNetworkModel
+#from svr import SupportVectorRegressorModel
+from nn_hyper import NeuralNetworkModel
+from svr_hyper import SupportVectorRegressorModel
 from feature_manager import FeatureManager
 import numpy as np
 import os
@@ -14,16 +15,15 @@ from sklearn.impute import SimpleImputer
 def main():
     # Load data
     # Load data
-    train_data = pd.read_csv('data_ml/input_features/combined_input_features_3.csv')
-    test_data = pd.read_csv('data_ml/input_features/combined_input_features_1.csv')
+    train_data = pd.read_csv('data_ml/input_features/Depot_511/combined_input_features_511_C3.csv')
+    test_data = pd.read_csv('data_ml/input_features/Depot_511/combined_input_features_511_C4.csv')
 
     # Initialize feature manager and models
     feature_manager = FeatureManager()
     models = {
         'RandomForest': RandomForestModel(),
         'NeuralNetwork': NeuralNetworkModel(),
-        'SVR': SupportVectorRegressorModel(),
-        'GradientBoosting': GradientBoostingModel()
+        'SVR': SupportVectorRegressorModel()
     }
     results = []
     for feature_set_name, feature_set in feature_manager.feature_sets.items():
@@ -69,7 +69,7 @@ def main():
             # save_predictions(feature_set_name, model_name, y_valid, y_pred)
     # Save results to a CSV file
     results_df = pd.DataFrame(results)
-    results_df.to_csv('data_ml/model_results/model_evaluation_results_test_set.csv', index=False)
+    results_df.to_csv('data_ml/model_results/model_evaluation_results_511_test_C4onC3.csv', index=False)
     print("Results saved")
 
 

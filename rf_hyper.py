@@ -2,8 +2,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 import pandas as pd
 import matplotlib.pyplot as plt
-import joblib
-
+from sklearn.model_selection import GridSearchCV
 
 class RandomForestModel:
     def __init__(self):
@@ -11,15 +10,23 @@ class RandomForestModel:
         self.feature_set_name = None
 
     def train(self, X_train, y_train):
-        self.model.fit(X_train, y_train)
+        # Define parameter grid for Random Forest
+        param_grid = {
+            'max_depth': [None, 10, 20, 30],  # Maximum depth of the tree
+            'min_samples_split': [2, 5, 10],  # Minimum number of samples required to split an internal node
+            'min_samples_leaf': [1, 2, 4],  # Minimum number of samples required to be at a leaf node
+            'max_features': ['sqrt', 'log2']  # Number of features to consider when looking for the best split
+        }
 
-    def save_model(self, model_path):
-        joblib.dump(self.model, model_path)
-        print(f"Model saved to {model_path}")
+        # Use GridSearchCV to find the best parameters
+        grid_search = GridSearchCV(self.model, param_grid, cv=5, scoring='r2', verbose=2, n_jobs=-1)
+        grid_search.fit(X_train, y_train)
 
-    def load_model(self, model_path):
-        self.model = joblib.load(model_path)
-        print(f"Model loaded from {model_path}")
+        # Set the best estimator as the model
+        self.model = grid_search.best_estimator_
+
+        # Print best parameters found by grid search
+        print(f"Best parameters found: {grid_search.best_params_}")
 
     def evaluate(self, X_valid, y_valid, save_path=None):
         y_pred = self.model.predict(X_valid).flatten()

@@ -1,7 +1,8 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Input
+from tensorflow.keras.layers import Dense, Dropout, Input, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import mean_squared_error, r2_score
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -11,20 +12,18 @@ class NeuralNetworkModel:
 
     def build_model(self, input_dim):
         model = Sequential()
-        model.add(Input(shape=(input_dim,)))  # Use Input layer
-        model.add(Dense(64, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(32, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(16, activation='relu'))
-        model.add(Dense(1, activation='linear'))
-        model.compile(optimizer=Adam(learning_rate=0.001), loss='mean_squared_error')
+        model.add(Input(shape=(input_dim,)))  # Input layer matching input dimensions
+        model.add(Dense(16, activation='relu'))  # Hidden layer with 32 neurons
+        model.add(BatchNormalization())  # Batch normalization to stabilize learning
+        model.add(Dense(16, activation='relu'))  # Another hidden layer with 16 neurons
+        model.add(Dense(1, activation='linear'))  # Output layer for regression
+        model.compile(optimizer=Adam(learning_rate=0.001), loss='mean_squared_error')  # Compile the model
         return model
 
     def train(self, X_train, y_train):
         input_dim = X_train.shape[1]
         self.model = self.build_model(input_dim)
-        self.model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)
+        self.model.fit(X_train, y_train, epochs=50, batch_size=16, verbose=0)
 
     def evaluate(self, X_valid, y_valid, save_path=None):
         y_pred = self.model.predict(X_valid).flatten()
@@ -42,6 +41,7 @@ class NeuralNetworkModel:
         self.plot_predictions(y_valid, y_pred, save_path)
 
         return mse, r2, y_pred
+
     def plot_predictions(self, y_valid, y_pred, save_path=None):
         plt.figure(figsize=(10, 6))
         plt.scatter(y_valid, y_pred, alpha=0.3, color='blue', label='Predicted')

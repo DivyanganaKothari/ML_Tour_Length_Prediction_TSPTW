@@ -2,56 +2,52 @@ import pandas as pd
 import numpy as np
 import os
 import ast
-
 import add_files
-from add_files import main
-# Load the filtered shipment entries
-filtered_shipment_entries = pd.read_csv('Data/Depot-511/filtered_shipment_entries.csv')
 
-# Load the distance matrix
-distance_matrix = pd.read_csv('Data/Depot-511/filtered_distance_matrix.csv', index_col=0)
+# Load the filtered shipment entries for Depot 521
+filtered_shipment_entries = pd.read_csv('Data/Depot-521/filtered_shipment_entries.csv')
+
+# Load the distance matrix for Depot 521
+distance_matrix = pd.read_csv('Data/Depot-521/filtered_distance_matrix.csv', index_col=0)
 
 # Ensure AddressId columns are treated as integers
 distance_matrix.index = distance_matrix.index.astype(int)
 distance_matrix.columns = distance_matrix.columns.astype(int)
 
-# Load the depot node information
+# Load the depot node information for Depot 521
 depot_node_info = pd.DataFrame([{
-    'SdnId': 21114458,
-    'KdnId': -22235,
-    'AddressId': 1,
-    'StopZeit': 184,
-    'Von1': '2024-04-04 00:00:00',
-    'Bis1': '2024-04-04 23:59:59',
-    'Latitude': 47.52725,
-    'Longitude': 7.6854
+    'AddressId': 9,
+    'Von1': '03-04-2024 00:00:00',
+    'Bis1': '03-04-2024 23:59:59',
+    'Latitude': 46.02154,
+    'Longitude': 8.91833
 }])
 
-# Ensure depot AddressId is added to the distance matrix
-if 1 not in distance_matrix.index:
+# Ensure depot AddressId 9 is added to the distance matrix
+if 9 not in distance_matrix.index:
     depot_distances = pd.Series(0, index=distance_matrix.columns)
-    distance_matrix.loc[1] = depot_distances
-    distance_matrix[1] = depot_distances
+    distance_matrix.loc[9] = depot_distances
+    distance_matrix[9] = depot_distances
 
-# Directory containing the zip code files
-zip_code_files_dir = 'Depot-511/zipCode_Clusters'  # Change clusters folder name
+# Directory containing the zip code files for Depot 521
+zip_code_files_dir = 'zipCode_Depot_521'
 
-# Directory to save the individual processed files
-individual_output_dir = 'data_ml/ProcessedFiles_511/ProcessedFiles'
+# Directory to save the individual processed files for Depot 521
+individual_output_dir = 'data_ml/ProcessedFiles521'
 if not os.path.exists(individual_output_dir):
     os.makedirs(individual_output_dir)
 
 # Function to calculate time window features
 def calculate_time_window_features(filtered_info):
-    filtered_info['Von1'] = pd.to_datetime(filtered_info['Von1'], format='%Y-%m-%d %H:%M:%S')
-    filtered_info['Bis1'] = pd.to_datetime(filtered_info['Bis1'], format='%Y-%m-%d %H:%M:%S')
+    filtered_info['Von1'] = pd.to_datetime(filtered_info['Von1'], format='mixed', dayfirst=True, errors='coerce')
+    filtered_info['Bis1'] = pd.to_datetime(filtered_info['Bis1'], format='mixed', dayfirst=True, errors='coerce')
 
-    mask = ~((filtered_info['Von1'] == pd.Timestamp('2024-04-04 00:00:00')) &
-             (filtered_info['Bis1'] == pd.Timestamp('2024-04-04 23:59:59')))
-    #mask tw which are not useful for model to learn from that has the whole day for delivery
+
+    mask = ~((filtered_info['Von1'] == pd.Timestamp('03-04-2024 00:00:00')) &
+             (filtered_info['Bis1'] == pd.Timestamp('03-04-2024 23:59:59')))
     calculation_info = filtered_info[mask]
 
-    reference_time = pd.Timestamp('2024-04-04 00:00:00')
+    reference_time = pd.Timestamp('03-04-2024 00:00:00')  # Adjusted to match depot start time
 
     time_windows = [(row['Von1'], row['Bis1']) for _, row in calculation_info.iterrows()]
     if len(time_windows) == 0:
@@ -82,7 +78,7 @@ def calculate_time_window_features(filtered_info):
     average_latest_time = np.mean(latest_times)
     std_dev_latest_time = np.std(latest_times)
 
-    mean_time_window = np.mean([end - start for start, end in time_windows])
+    mean_time_window = np.mean([(end - start).total_seconds() for start, end in time_windows])
 
     return {
         'Total Time Window': total_time_window,
@@ -96,14 +92,14 @@ def calculate_time_window_features(filtered_info):
         'Max Earliest Time': max_earliest_time,
         'Min Latest Time': min_latest_time,
         'Max Latest Time': max_latest_time,
-        'Mean Time Window': mean_time_window.total_seconds() / 60
+        'Mean Time Window': mean_time_window
     }
 
 # Function to calculate distance features
 def calculate_distance_features(filtered_info, distance_matrix):
     address_ids = filtered_info['AddressId'].astype(int).tolist()
-    if 1 not in address_ids:
-        address_ids.append(1)
+    if 9 not in address_ids:
+        address_ids.append(9)
 
     distance_matrix_cluster = distance_matrix.loc[address_ids, address_ids]
     n = distance_matrix_cluster.shape[0]
@@ -138,10 +134,8 @@ def calculate_distance_features(filtered_info, distance_matrix):
         'Percentile 50 Distance': np.percentile(all_distances, 50),
         'Percentile 75 Distance': np.percentile(all_distances, 75)
     }
-
-# Function to calculate depot-related features
 def calculate_depot_features(filtered_info, distance_matrix):
-    depot_distances = distance_matrix.loc[1, filtered_info['AddressId'].astype(int).tolist()].values
+    depot_distances = distance_matrix.loc[9, filtered_info['AddressId'].astype(int).tolist()].values
     depot_distances_excluding_self = depot_distances[depot_distances != 0]
 
     return {
@@ -152,7 +146,6 @@ def calculate_depot_features(filtered_info, distance_matrix):
         'Standard Deviation of Distance to Depot': np.std(depot_distances_excluding_self)
     }
 
-# Function to calculate the input features
 def calculate_input_features(filtered_info, distance_matrix, cluster_id, tour_length):
     distance_features = calculate_distance_features(filtered_info, distance_matrix)
     time_window_features = calculate_time_window_features(filtered_info)
@@ -164,7 +157,6 @@ def calculate_input_features(filtered_info, distance_matrix, cluster_id, tour_le
         **depot_features,
         'Tour Length': tour_length
     }
-
     return features
 
 
@@ -175,7 +167,6 @@ for zip_code_file in os.listdir(zip_code_files_dir):
 
         zip_codes_df = pd.read_csv(os.path.join(zip_code_files_dir, zip_code_file), sep=';')
         zip_codes_df['Zip Codes'] = zip_codes_df['Zip Codes'].apply(lambda x: ast.literal_eval(x.strip()))
-
 
         for index, row in zip_codes_df.iterrows():
             cluster_id = index + 1  # Assign a unique cluster ID

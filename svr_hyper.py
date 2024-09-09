@@ -1,25 +1,32 @@
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import GridSearchCV
 import pandas as pd
 import matplotlib.pyplot as plt
-import joblib
 
-
-class RandomForestModel:
+class SupportVectorRegressorModel:
     def __init__(self):
-        self.model = RandomForestRegressor(n_estimators=50, random_state=42)
-        self.feature_set_name = None
-
+        self.model = None
+        self.best_params = None
     def train(self, X_train, y_train):
+        # Perform grid search to tune hyperparameters
+        param_grid = {
+            'C': [0.1, 1, 10, 100],
+            'epsilon': [0.01, 0.1, 0.2, 0.5],
+            'gamma': ['scale', 'auto', 0.1, 0.01, 0.001]
+        }
+
+        svr = SVR(kernel='rbf')
+        grid_search = GridSearchCV(svr, param_grid, cv=5, scoring='r2', verbose=2, n_jobs=-1)
+        grid_search.fit(X_train, y_train)
+
+        # Best hyperparameters
+        self.best_params = grid_search.best_params_
+        print("Best hyperparameters:", self.best_params)
+
+        # Train the best SVR model
+        self.model = grid_search.best_estimator_
         self.model.fit(X_train, y_train)
-
-    def save_model(self, model_path):
-        joblib.dump(self.model, model_path)
-        print(f"Model saved to {model_path}")
-
-    def load_model(self, model_path):
-        self.model = joblib.load(model_path)
-        print(f"Model loaded from {model_path}")
 
     def evaluate(self, X_valid, y_valid, save_path=None):
         y_pred = self.model.predict(X_valid).flatten()

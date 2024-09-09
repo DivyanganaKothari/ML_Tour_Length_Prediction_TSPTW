@@ -9,7 +9,7 @@ class FeatureManager:
                      'Average Earliest Time', 'Standard Deviation Earliest Time', 'Average Latest Time',
                      'Standard Deviation Latest Time', 'Mean Time Window', 'Sum of Distance to Depot',
                      'Average Distance to Depot', 'Maximum Distance to Depot',
-                     'Minimum Distance to Depot', 'Standard Deviation of Distance to Depot', 'Tour Length',
+                     'Minimum Distance to Depot', 'Standard Deviation of Distance to Depot',
                      'Min Earliest Time', 'Max Earliest Time', 'Min Latest Time', 'Max Latest Time'],
             "set2": ['MinP', 'MaxP', 'MinM', 'MaxM', 'SumM', 'VarP', 'Std Distance', 'Sum of Min Distance',
                      'Sum of Max Distance', 'Total Time Window', 'Sum of Distance to Depot'
@@ -30,16 +30,16 @@ class FeatureManager:
             "set9": ['Max Earliest Time', 'Min Earliest Time', 'Sum Distance', 'Total Time Window',
                       'Standard Deviation of Distance to Depot', 'Minimum Distance to Depot', 'Average Time Window',
                       'Average Latest Time', 'Maximum Distance to Depot'],
-        
-            "set10": ['Max Earliest Time', 'Min Earliest Time'], #top 2 rf features
-    
-            "set11": ['Max Earliest Time', 'Min Earliest Time', 'MaxP','Sum of Max Distance','MinM' ], #top rf features
-            "set12": ['Standard Deviation of Distance to Depot','Max Earliest Time','Minimum Distance to Depot',
-                                       'Average Distance to Depot', 'Sum of Distance to Depot'], # top nn features
-            "set13": ['Max Earliest Time', 'Sum of Max Distance','Minimum Distance to Depot', 'MaxP',
-                                        'Standard Deviation of Distance to Depot'], # top svr features
-            "set14": ['Max Earliest Time', 'Standard Deviation of Distance to Depot','Min Earliest Time', 'MaxP','MinM'] # top gbm features
-            
+
+            "set10": ['Max Earliest Time', 'Standard Deviation of Distance to Depot', 'Min Earliest Time',
+                      'MaxP','Sum of Max Distance','Percentile 75 Distance' ], #top rf features
+
+            "set11": ['Min Latest Time','Minimum Distance to Depot','Maximum Distance to Depot',
+                      'Average Distance to Depot', 'Max Latest Time','Max Earliest Time'], # top nn features
+
+            "set12": ['Max Earliest Time','Min Earliest Time', 'Sum of Max Distance','MaxP', 'Min Latest Time',
+                                        'Minimum Distance to Depot'], # top svr features
+
         }
 
     def get_feature_set(self, set_name):
